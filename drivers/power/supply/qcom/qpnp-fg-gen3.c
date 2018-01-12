@@ -706,23 +706,8 @@ static int fg_get_battery_temp(struct fg_chip *chip, int *val)
 
 	temp = ((buf[1] & BATT_TEMP_MSB_MASK) << 8) |
 		(buf[0] & BATT_TEMP_LSB_MASK);
-#ifdef CONFIG_LGE_PM
-	temp = DIV_ROUND_CLOSEST((temp * 10), 4);
-
-	/* Value is in Kelvin; Convert it to deciDegC */
-	temp = temp - (273 * 10);
-#else
-	temp = DIV_ROUND_CLOSEST(temp, 4);
-
-	/* Value is in Kelvin; Convert it to deciDegC */
-	temp = (temp - 273) * 10;
-#endif
-	*val = temp;
-
-#ifdef CONFIG_LGE_PM_DEBUG
-	if (temp >= 600)
-		pr_err("Battery temperature is raised to %d\n", temp);
-#endif
+	/* Value is in 0.25Kelvin; Convert it to deciDegC */
+	*val = DIV_ROUND_CLOSEST((temp - 273*4) * 10, 4);
 	return 0;
 }
 
