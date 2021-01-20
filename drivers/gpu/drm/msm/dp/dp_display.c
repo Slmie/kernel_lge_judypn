@@ -13,6 +13,7 @@
  */
 
 #define pr_fmt(fmt)	"[drm-dp] %s: " fmt, __func__
+#define DEBUG
 
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -37,6 +38,14 @@
 #include "dp_display.h"
 #include "sde_hdcp.h"
 #include "dp_debug.h"
+
+#ifndef CONFIG_LGE_DISPLAY_NOT_SUPPORT_DISPLAYPORT
+#include "../lge/dp/lge_dp.h"
+#endif
+
+#ifdef CONFIG_LGE_DISPLAY_SUPPORT_DP_KOPIN
+extern bool is_kopin;
+#endif
 
 static struct dp_display *g_dp_display;
 #define HPD_STRING_SIZE 30
@@ -314,7 +323,11 @@ static int dp_display_initialize_hdcp(struct dp_display_private *dp)
 	}
 
 	pr_debug("HDCP 2.2 initialized\n");
-
+#ifdef CONFIG_LGE_DISPLAY_SUPPORT_DP_KOPIN
+	if (is_kopin)
+		dp->hdcp.feature_enabled = false;
+	else
+#endif
 	dp->hdcp.feature_enabled = true;
 
 	return 0;
@@ -349,6 +362,9 @@ static int dp_display_bind(struct device *dev, struct device *master,
 
 	dp->dp_display.drm_dev = drm;
 	dp->priv = drm->dev_private;
+#ifndef CONFIG_LGE_DISPLAY_NOT_SUPPORT_DISPLAYPORT
+	lge_dp_drv_init(&dp->dp_display);
+#endif
 end:
 	return rc;
 }
@@ -513,6 +529,9 @@ static int dp_display_process_hpd_high(struct dp_display_private *dp)
 		else
 			goto notify;
 	}
+#ifndef CONFIG_LGE_DISPLAY_NOT_SUPPORT_DISPLAYPORT
+	lge_set_dp_hpd(&dp->dp_display, 1);
+#endif
 
 	edid = dp->panel->edid_ctrl->edid;
 
@@ -573,7 +592,9 @@ static int dp_display_process_hpd_low(struct dp_display_private *dp)
 		pr_debug("HPD already off\n");
 		return 0;
 	}
-
+#ifndef CONFIG_LGE_DISPLAY_NOT_SUPPORT_DISPLAYPORT
+	lge_set_dp_hpd(&dp->dp_display, 0);
+#endif
 	if (dp_display_is_hdcp_enabled(dp) && dp->hdcp.ops->off)
 		dp->hdcp.ops->off(dp->hdcp.data);
 
@@ -700,7 +721,7 @@ static int dp_display_usbpd_disconnect_cb(struct device *dev)
 end:
 	return rc;
 }
-
+#if 0
 static void dp_display_handle_maintenance_req(struct dp_display_private *dp)
 {
 	mutex_lock(&dp->audio->ops_lock);
@@ -715,7 +736,7 @@ static void dp_display_handle_maintenance_req(struct dp_display_private *dp)
 
 	mutex_unlock(&dp->audio->ops_lock);
 }
-
+#endif
 static void dp_display_attention_work(struct work_struct *work)
 {
 	struct dp_display_private *dp = container_of(work,
@@ -754,13 +775,13 @@ static void dp_display_attention_work(struct work_struct *work)
 	}
 
 	if (dp->link->sink_request & DP_LINK_STATUS_UPDATED) {
-		dp_display_handle_maintenance_req(dp);
+		 dp->ctrl->link_maintenance(dp->ctrl);
 		return;
 	}
 
 	if (dp->link->sink_request & DP_TEST_LINK_TRAINING) {
 		dp->link->send_test_response(dp->link);
-		dp_display_handle_maintenance_req(dp);
+		 dp->ctrl->link_maintenance(dp->ctrl);
 		return;
 	}
 }
@@ -887,7 +908,19 @@ static int dp_init_sub_modules(struct dp_display_private *dp)
 		goto error_aux;
 	}
 
-	dp->aux = dp_aux_get(dev, &dp->catalog->aux, dp->parser->aux_cfg);
+	cb->configure  = dp_display_usbpd_configure_cb;
+	cb->disconnect = dp_display_usbpd_disconnect_cb;
+	cb->attention  = dp_display_usbpd_attention_cb;
+
+	dp->usbpd = dp_usbpd_get(dev, cb);
+	if (IS_ERR(dp->usbpd)) {
+		rc = PTR_ERR(dp->usbpd);
+		pr_err("failed to initialize usbpd, rc = %d\n", rc);
+		dp->usbpd = NULL;
+		goto error_usbpd;
+	}
+
+	dp->aux = dp_aux_get(dev, &dp->catalog->aux, dp->parser->aux_cfg, dp->usbpd);
 	if (IS_ERR(dp->aux)) {
 		rc = PTR_ERR(dp->aux);
 		pr_err("failed to initialize aux, rc = %d\n", rc);
@@ -944,18 +977,6 @@ static int dp_init_sub_modules(struct dp_display_private *dp)
 		goto error_audio;
 	}
 
-	cb->configure  = dp_display_usbpd_configure_cb;
-	cb->disconnect = dp_display_usbpd_disconnect_cb;
-	cb->attention  = dp_display_usbpd_attention_cb;
-
-	dp->usbpd = dp_usbpd_get(dev, cb);
-	if (IS_ERR(dp->usbpd)) {
-		rc = PTR_ERR(dp->usbpd);
-		pr_err("failed to initialize usbpd, rc = %d\n", rc);
-		dp->usbpd = NULL;
-		goto error_usbpd;
-	}
-
 	dp->debug = dp_debug_get(dev, dp->panel, dp->usbpd,
 				dp->link, dp->aux, &dp->dp_display.connector,
 				dp->catalog);
@@ -968,8 +989,6 @@ static int dp_init_sub_modules(struct dp_display_private *dp)
 
 	return rc;
 error_debug:
-	dp_usbpd_put(dp->usbpd);
-error_usbpd:
 	dp_audio_put(dp->audio);
 error_audio:
 	dp_ctrl_put(dp->ctrl);
@@ -980,6 +999,8 @@ error_panel:
 error_link:
 	dp_aux_put(dp->aux);
 error_aux:
+	dp_usbpd_put(dp->usbpd);
+error_usbpd:
 	dp_power_put(dp->power);
 error_power:
 	dp_catalog_put(dp->catalog);
@@ -1135,7 +1156,6 @@ static int dp_display_post_enable(struct dp_display *dp_display)
 		pr_err("invalid input\n");
 		return -EINVAL;
 	}
-
 	dp = container_of(dp_display, struct dp_display_private, dp_display);
 
 	mutex_lock(&dp->session_lock);
@@ -1149,7 +1169,6 @@ static int dp_display_post_enable(struct dp_display *dp_display)
 		pr_err("aborted\n");
 		goto end;
 	}
-
 	dp->panel->spd_config(dp->panel);
 
 	if (dp->audio_supported) {
@@ -1164,7 +1183,7 @@ static int dp_display_post_enable(struct dp_display *dp_display)
 		cancel_delayed_work_sync(&dp->hdcp_cb_work);
 
 		dp->link->hdcp_status.hdcp_state = HDCP_STATE_AUTHENTICATING;
-		queue_delayed_work(dp->wq, &dp->hdcp_cb_work, HZ / 2);
+		queue_delayed_work(dp->wq, &dp->hdcp_cb_work, HZ * 3);
 	}
 
 	dp->panel->setup_hdr(dp->panel, NULL);
@@ -1434,6 +1453,24 @@ static int dp_display_config_hdr(struct dp_display *dp_display,
 
 	return rc;
 }
+
+#if IS_ENABLED(CONFIG_LGE_DISPLAY_COMMON)
+struct dp_aux_cfg *lge_dp_display_parser_aux_cfg(struct dp_display *dp_display)
+{
+	struct dp_display_private *dp = NULL;
+
+	if (!dp_display) {
+		pr_err("invalid input\n");
+		return NULL;
+	}
+
+	dp = container_of(dp_display, struct dp_display_private, dp_display);
+	if (dp->parser)
+		return dp->parser->aux_cfg;
+	else
+		return NULL;
+}
+#endif
 
 static int dp_display_get_display_type(struct dp_display *dp_display,
 		const char **display_type)
