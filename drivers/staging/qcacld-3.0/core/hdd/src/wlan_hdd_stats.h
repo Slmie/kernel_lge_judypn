@@ -427,4 +427,6 @@ void wlan_hdd_register_cp_stats_cb(struct hdd_context *hdd_ctx);
 static inline void wlan_hdd_register_cp_stats_cb(struct hdd_context *hdd_ctx) {}
 #endif
 
+int wlan_hdd_get_sap_stats(struct hdd_adapter *adapter, struct station_info *info);   // LGE_PATCH
+
 #endif /* end #if !defined(WLAN_HDD_STATS_H) */

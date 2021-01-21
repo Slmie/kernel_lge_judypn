@@ -3599,6 +3599,10 @@ static __iw_softap_setparam(struct net_device *dev,
 
 	hdd_enter_dev(dev);
 
+// [LGE_CHANGE_S] 2017.04.26, neo-wifi@lge.com, Add Reset Command for KPI log
+	hdd_err("__iw_softap_setparam() : Cmd : %d", sub_cmd);
+// [LGE_CHANGE_E] 2017.04.26, neo-wifi@lge.com, Add Reset Command for KPI log
+
 	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	ret = wlan_hdd_validate_context(hdd_ctx);
 	if (0 != ret)
@@ -3749,6 +3753,22 @@ static __iw_softap_setparam(struct net_device *dev,
 		ret = wma_cli_set_command(adapter->session_id,
 					  WMA_VDEV_TXRX_FWSTATS_ENABLE_CMDID,
 					  set_value, VDEV_CMD);
+// [LGE_CHANGE_S] 2017.04.26, neo-wifi@lge.com, Add Reset Command for KPI log
+#ifdef FEATURE_SUPPORT_LGE
+        ret = wma_cli_set_command(adapter->session_id,
+                      WMA_VDEV_TXRX_FWSTATS_RESET_CMDID,
+                      set_value, VDEV_CMD);
+        {
+extern int wlan_hdd_get_sap_stats(struct hdd_adapter *adapter, struct station_info *info);
+
+            struct station_info info;
+
+            if (adapter->device_mode == QDF_SAP_MODE) {
+                wlan_hdd_get_sap_stats(adapter, &info);
+            }
+        }
+#endif
+// [LGE_CHANGE_E] 2017.04.26, neo-wifi@lge.com, Add Reset Command for KPI log
 		break;
 	}
 

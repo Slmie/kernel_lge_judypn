@@ -488,7 +488,11 @@ struct reg_table_entry g_registry_table[] = {
 	REG_VARIABLE(CFG_CHANNEL_BONDING_MODE_24GHZ_NAME, WLAN_PARAM_Integer,
 		     struct hdd_config, nChannelBondingMode24GHz,
 		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK,
+#ifdef FEATURE_SUPPORT_LGE
+		     0, // LGE patch
+#else
 		     CFG_CHANNEL_BONDING_MODE_DEFAULT,
+#endif
 		     CFG_CHANNEL_BONDING_MODE_MIN,
 		     CFG_CHANNEL_BONDING_MODE_MAX),
 

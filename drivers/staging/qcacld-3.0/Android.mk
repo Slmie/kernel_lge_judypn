@@ -1,5 +1,8 @@
 # Android makefile for the WLAN Module
 
+# LG-add feature for using default WLAN module driver (wlan.ko)
+ifneq ($(WIFI_DRIVER_MODULE_PATH),)
+
 # Assume no targets will be supported
 WLAN_CHIPSET :=
 
@@ -83,3 +86,5 @@ endif
 endif # DLKM check
 endif # supported target check
 endif # WLAN enabled check
+
+endif # WIFI_DRIVER_MODULE_PATH

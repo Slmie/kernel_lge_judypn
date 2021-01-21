@@ -142,6 +142,7 @@ CONFIG_ADAPTIVE_11R := y
 CONFIG_SAE_SINGLE_PMK := y
 
 #Flag to enable FILS Feature (11ai)
+#don't use it in lge devices. it is not verified yet
 CONFIG_WLAN_FEATURE_FILS := y
 ifneq ($(CONFIG_QCA_CLD_WLAN),)
 	ifeq (y,$(findstring y,$(CONFIG_CNSS) $(CONFIG_CNSS2) $(CONFIG_ICNSS)))
