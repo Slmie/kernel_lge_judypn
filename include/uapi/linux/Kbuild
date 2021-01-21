@@ -34,6 +34,8 @@ no-export-headers += tee.h
 no-export-headers += userio.h
 no-export-headers += wil6210_uapi.h
 
+header-y += lib_lge_triton.h
+
 ifneq ($(VSERVICES_SUPPORT), "")
 include include/linux/Kbuild.vservices
 endif
