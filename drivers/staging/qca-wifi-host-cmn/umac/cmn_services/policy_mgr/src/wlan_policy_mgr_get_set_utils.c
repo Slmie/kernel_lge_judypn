@@ -2434,6 +2434,20 @@ void policy_mgr_dump_connection_status_info(struct wlan_objmgr_psoc *psoc)
 				pm_conc_connection_list[i].chain_mask,
 				pm_conc_connection_list[i].original_nss,
 				pm_conc_connection_list[i].bw);
+
+#ifdef FEATURE_SUPPORT_LGE
+// LGE_CHANGE_S,, 2017.03.07, neo-wifi@lge.com, Add DBS assign log
+        printk("[LGE-WIFI] %d-th, use:%d vdev:%d mode:%d mac:%d chan:%d orig chainmask:%d orig nss:%d bw:%d\n",
+                i, pm_conc_connection_list[i].in_use,
+                pm_conc_connection_list[i].vdev_id,
+                pm_conc_connection_list[i].mode,
+                pm_conc_connection_list[i].mac,
+                pm_conc_connection_list[i].chan,
+                pm_conc_connection_list[i].chain_mask,
+                pm_conc_connection_list[i].original_nss,
+                pm_conc_connection_list[i].bw);
+// LGE_CHANGE_E, 2017.03.07, neo-wifi@lge.com, Add DBS assign log
+#endif
 	}
 	qdf_mutex_release(&pm_ctx->qdf_conc_list_lock);
 }
