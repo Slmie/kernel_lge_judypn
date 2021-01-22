@@ -2957,16 +2957,6 @@ static int ufshcd_compose_upiu(struct ufs_hba *hba, struct ufshcd_lrb *lrbp)
 			ret = ufshcd_prepare_req_desc_hdr(hba, lrbp,
 				&upiu_flags, lrbp->cmd->sc_data_direction);
 
-#ifdef CONFIG_LGE_IOSCHED_EXTENSION
-			if (hba->dev_info.quirks & UFS_DEVICE_QUIRK_CMD_ORDERED) {
-				if ( (req_op(lrbp->cmd->request) == REQ_OP_WRITE) &&
-					(lrbp->cmd->request->bio) &&
-					(lrbp->cmd->request->bio->bi_excontrol & REQ_EX_ORDERED) ) {
-					upiu_flags |= UPIU_TASK_ATTR_ORDERED;
-				}
-			}
-#endif
-
 			ufshcd_prepare_utp_scsi_cmd_upiu(lrbp, upiu_flags);
 		} else {
 			ret = -EINVAL;
