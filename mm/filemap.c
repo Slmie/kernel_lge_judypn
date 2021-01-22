@@ -2239,9 +2239,6 @@ static struct file *do_sync_mmap_readahead(struct vm_area_struct *vma,
 	 * mmap read-around
 	 */
 	fpin = maybe_unlock_mmap_for_io(vma, flags, fpin);
-#ifdef CONFIG_READAHEAD_MMAP_SIZE_ENABLE
-	ra->ra_pages = CONFIG_READAHEAD_MMAP_PAGE_CNT;
-#endif
 	ra->start = max_t(long, 0, offset - ra->ra_pages / 2);
 	ra->size = ra->ra_pages;
 	ra->async_size = ra->ra_pages / 4;
