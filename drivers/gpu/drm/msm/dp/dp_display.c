@@ -13,7 +13,7 @@
  */
 
 #define pr_fmt(fmt)	"[drm-dp] %s: " fmt, __func__
-#define DEBUG
+// #define DEBUG
 
 #include <linux/module.h>
 #include <linux/slab.h>

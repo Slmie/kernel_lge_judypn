@@ -13,7 +13,7 @@
  */
 
 #define pr_fmt(fmt)	"[drm-dp] %s: " fmt, __func__
-#define DEBUG
+// #define DEBUG
 
 #include <linux/of_platform.h>
 #include <linux/msm_ext_display.h>
