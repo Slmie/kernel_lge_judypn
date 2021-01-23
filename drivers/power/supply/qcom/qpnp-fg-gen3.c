@@ -2250,7 +2250,9 @@ static int fg_adjust_recharge_soc(struct fg_chip *chip)
 #ifdef CONFIG_LGE_PM
 				if(msoc >= recharge_soc)
 					new_recharge_soc = recharge_soc;
+#ifdef CONFIG_LGE_PM_DEBUG
 				fg_dbg(chip, FG_LGE, "resume soc set to %d\n", new_recharge_soc);
+#endif
 #endif
 			} else {
 				/* adjusted already, do nothing */
@@ -2355,7 +2357,7 @@ static int fg_slope_limit_config(struct fg_chip *chip, int batt_temp)
 	}
 
 	chip->slope_limit_sts = status;
-#ifdef CONFIG_LGE_PM
+#ifdef CONFIG_LGE_PM_DEBUG
 	fg_dbg(chip, FG_LGE, "Slope limit status: %d value: %x\n", status,
 		buf);
 #else
@@ -2415,7 +2417,7 @@ static int __fg_esr_filter_config(struct fg_chip *chip,
 	}
 
 	chip->esr_flt_sts = esr_flt_sts;
-#ifdef CONFIG_LGE_PM
+#ifdef CONFIG_LGE_PM_DEBUG
 	fg_dbg(chip, FG_LGE,
 		"applied ESR filter %d=%s(lvl=%d, time=%dsec), values(tight=%d, broad=%d)\n",
 				esr_flt_sts, str_esr_flt_sts[esr_flt_sts], chip->esr_flt_rt_lvl,
@@ -2821,8 +2823,10 @@ static void backup_from_cycle_counter(struct fg_chip *chip)
 	/* backup cycle count*/
 	mutex_lock(&chip->cyc_ctr.lock);
 	for (i = 0; i < BUCKET_COUNT; i++) {
+#ifdef CONFIG_LGE_PM_DEBUG
 		fg_dbg(chip, FG_LGE, "backup_from: %d: %d -> %d\n",
 			i, chip->cyc_ctr.count[i], chip->cyc_ctr_backup.count[i]);
+#endif
 		chip->cyc_ctr_backup.count[i] = chip->cyc_ctr.count[i];
 	}
 	mutex_unlock(&chip->cyc_ctr.lock);
@@ -2838,16 +2842,21 @@ static void backup_to_cycle_counter(struct fg_chip *chip)
 	mutex_lock(&chip->cyc_ctr.lock);
 	/* restore cycle count from backup*/
 	for (i = 0; i < BUCKET_COUNT; i++) {
+#ifdef CONFIG_LGE_PM_DEBUG
 		fg_dbg(chip, FG_LGE, "backup_to: %d: %d <- %d\n",
 			i, chip->cyc_ctr.count[i], chip->cyc_ctr_backup.count[i]);
+#endif
 		chip->cyc_ctr.count[i] = chip->cyc_ctr_backup.count[i];
 	}
 	/* write backuped cycle count to from sram */
 	rc = fg_sram_write(chip, CYCLE_COUNT_WORD, CYCLE_COUNT_OFFSET,
 			(u8 *)&chip->cyc_ctr.count, sizeof(chip->cyc_ctr.count),
 			FG_IMA_DEFAULT);
+
+#ifdef CONFIG_LGE_PM_DEBUG
 	if (rc < 0)
 		fg_dbg(chip, FG_LGE, "failed to write cycle counter rc=%d\n", rc);
+#endif
 	mutex_unlock(&chip->cyc_ctr.lock);
 }
 #endif
@@ -4043,7 +4052,9 @@ static int fg_force_esr_meas(struct fg_chip *chip)
 	u8 buf[4] = {0, 0, 0, 0};
 #endif
 
+#ifdef CONFIG_LGE_PM_DEBUG
 	fg_dbg(chip, FG_LGE, "qni: >>> enter\n");
+#endif
 	mutex_lock(&chip->qnovo_esr_ctrl_lock);
 	/* force esr extraction enable */
 #ifdef CONFIG_LGE_PM
@@ -4097,7 +4108,9 @@ static int fg_force_esr_meas(struct fg_chip *chip)
 
 	/* If qnovo is disabled, then leave ESR extraction enabled */
 	if (!chip->qnovo_enable) {
+#ifdef CONFIG_LGE_PM_DEBUG
 		fg_dbg(chip, FG_LGE, "qni: <><> cancel due to disabled qnovo\n");
+#endif
 		goto done;
 	}
 
@@ -4129,7 +4142,9 @@ done:
 	rc = fg_get_sram_prop(chip, FG_SRAM_ESR, &esr_uohms);
 	if (rc < 0)
 		pr_err("error to get ESR, rc=%d\n", rc);
+#ifdef CONFIG_LGE_PM_DEBUG
 	fg_dbg(chip, FG_LGE, "qni: <<< exit, ESR uohms = %d\n", esr_uohms);
+#endif
 out:
 	mutex_unlock(&chip->qnovo_esr_ctrl_lock);
 	return rc;
@@ -5394,12 +5409,15 @@ static int fg_parse_slope_limit_coefficients(struct fg_chip *chip)
 			return -EINVAL;
 		}
 	}
+
+#ifdef CONFIG_LGE_PM_DEBUG
 	pr_info("slope-limit-thr=%ddegC, coeffs=<%d %d %d %d>\n",
 			chip->dt.slope_limit_temp,
 			chip->dt.slope_limit_coeffs[LOW_TEMP_DISCHARGE],
 			chip->dt.slope_limit_coeffs[LOW_TEMP_CHARGE],
 			chip->dt.slope_limit_coeffs[HIGH_TEMP_DISCHARGE],
 			chip->dt.slope_limit_coeffs[HIGH_TEMP_CHARGE]);
+#endif
 
 	chip->slope_limit_en = true;
 	return 0;
@@ -5471,11 +5489,15 @@ static int fg_parse_ki_coefficients(struct fg_chip *chip)
 			return -EINVAL;
 		}
 	}
+
+#ifdef CONFIG_LGE_PM_DEBUG
 	pr_info("soc[%d], high:%d med%d, low%d\n",
 			chip->dt.ki_coeff_soc[i],
 			chip->dt.ki_coeff_hi_dischg[i],
 			chip->dt.ki_coeff_med_dischg[i],
 			chip->dt.ki_coeff_low_dischg[i]);
+#endif
+
 	chip->ki_coeff_dischg_en = true;
 
 	return 0;

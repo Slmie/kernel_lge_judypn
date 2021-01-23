@@ -877,6 +877,7 @@ int override_fg_adjust_ki_coeff_dischg(struct fg_chip *chip, int ki_low, int ki_
 		return rc;
 	}
 
+#ifdef CONFIG_LGE_PM_DEBUG
 	fg_dbg(chip, FG_LGE,
 		"Wrote [ki_coeff: low=%d, med=%d, hi=%d]-"
 		"[ki curr: lowth=%d, highth=%d]-[cutoff: %dmV, %dmA]-"
@@ -885,6 +886,7 @@ int override_fg_adjust_ki_coeff_dischg(struct fg_chip *chip, int ki_low, int ki_
 		cutoff_volt, cutoff_curr,
 		(chip->charge_status == POWER_SUPPLY_STATUS_DISCHARGING) ? "DISC": "CHG",
 		msoc, (chip->esr_flt_sts == LOW_TEMP) ? "low": "room or relex");
+#endif
 
 	return 0;
 }
@@ -919,12 +921,14 @@ int override_fg_parse_for_battery_charactistics(struct fg_chip *chip, struct dev
 	if (!rc)
 		chip->dt.esr_broad_lt_flt_upct = temp;
 
+#ifdef CONFIG_LGE_PM_DEBUG
 	fg_dbg(chip, FG_LGE,
 		"Wrote [battery charactistics: cutoff=(%dmV, %dmA), cutoff_lt=(%dmV, %dmA), "
 		"esr_tight_lt_filter=%d, esr_broad_lt_filter=%d]\n",
 		chip->dt.cutoff_volt_mv, chip->dt.cutoff_curr_ma,
 		chip->dt.cutoff_lt_volt_mv, chip->dt.cutoff_lt_curr_ma,
 		chip->dt.esr_tight_lt_flt_upct, chip->dt.esr_broad_lt_flt_upct);
+#endif
 
 	return 0;
 }
@@ -1291,10 +1295,13 @@ static int extension_fg_gen3_set_ki_coeff_chg(struct fg_chip *chip)
 		return rc;
 	}
 	old_ki_chg_hi= ki_coeff.ki_chg[HIGH_CURR];
+
+#ifdef CONFIG_LGE_PM_DEBUG
 	fg_dbg(chip, FG_LGE,
 		"Wrote [ki_coeff_chg: hi=%d]-[status:%s]\n",
 		old_ki_chg_hi,
 		(chip->charge_status == POWER_SUPPLY_STATUS_DISCHARGING) ? "DISC": "CHG");
+#endif
 
 	return rc;
 }
