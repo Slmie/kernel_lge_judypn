@@ -802,7 +802,7 @@ CONFIG_LGE_PM_SMPL_COUNTER=y
 CONFIG_LGE_PM_BATT_ID_ADC=y
 CONFIG_LGE_PM_VENEER_PSY=y
 ### lge_pm_prm disable start
-CONFIG_LGE_PM_PRM=y
+CONFIG_LGE_PM_PRM=n
 ### lge_pm_prm disable end
 
 #
