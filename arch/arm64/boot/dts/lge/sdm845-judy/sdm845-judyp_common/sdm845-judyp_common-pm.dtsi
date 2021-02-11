@@ -262,7 +262,7 @@
 					restrict-name = "LCD";
 					restrict-type = "idc";
 					restrict-commands = "ON", "OFF";
-					restrict-values = < 700      0>;
+					restrict-values = < 0      0>;
 				};
 			};
 		};
