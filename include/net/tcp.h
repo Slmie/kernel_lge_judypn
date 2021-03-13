@@ -240,29 +240,9 @@ void tcp_time_wait(struct sock *sk, int state, int timeo);
 #define	TFO_SERVER_WO_SOCKOPT1	0x400
 
 #ifdef CONFIG_LGP_DATA_TCPIP_MPTCP
-/* Flags from tcp_input.c for tcp_ack */
-#define FLAG_DATA               0x01 /* Incoming frame contained data.          */
-#define FLAG_WIN_UPDATE         0x02 /* Incoming ACK was a window update.       */
-#define FLAG_DATA_ACKED         0x04 /* This ACK acknowledged new data.         */
-#define FLAG_RETRANS_DATA_ACKED 0x08 /* "" "" some of which was retransmitted.  */
-#define FLAG_SYN_ACKED          0x10 /* This ACK acknowledged SYN.              */
-#define FLAG_DATA_SACKED        0x20 /* New SACK.                               */
-#define FLAG_ECE                0x40 /* ECE in this ACK                         */
-#define FLAG_LOST_RETRANS       0x80 /* This ACK marks some retransmission lost */
-#define FLAG_SLOWPATH           0x100 /* Do not skip RFC checks for window update.*/
-#define FLAG_ORIG_SACK_ACKED    0x200 /* Never retransmitted data are (s)acked  */
-#define FLAG_SND_UNA_ADVANCED   0x400 /* Snd_una was changed (!= FLAG_DATA_ACKED) */
-#define FLAG_DSACKING_ACK       0x800 /* SACK blocks contained D-SACK info */
-#define FLAG_SACK_RENEGING      0x2000 /* snd_una advanced to a sacked seq */
-#define FLAG_UPDATE_TS_RECENT   0x4000 /* tcp_replace_ts_recent() */
-#define FLAG_NO_CHALLENGE_ACK	0x8000 /* do not call tcp_send_challenge_ack()	*/
 
 #define MPTCP_FLAG_DATA_ACKED	0x10000
 
-#define FLAG_ACKED              (FLAG_DATA_ACKED|FLAG_SYN_ACKED)
-#define FLAG_NOT_DUP            (FLAG_DATA|FLAG_WIN_UPDATE|FLAG_ACKED)
-#define FLAG_CA_ALERT           (FLAG_DATA_SACKED|FLAG_ECE)
-#define FLAG_FORWARD_PROGRESS   (FLAG_ACKED|FLAG_DATA_SACKED)
 #endif
 
 extern struct inet_timewait_death_row tcp_death_row;
@@ -1454,15 +1434,15 @@ static inline void tcp_slow_start_after_idle_check(struct sock *sk)
 }
 
 /* Determine a window scaling and initial window to offer. */
-void tcp_select_initial_window(struct net *net,
+void tcp_select_initial_window(
+#ifdef CONFIG_LGP_DATA_TCPIP_MPTCP
+			       const struct sock *sk,
+#else
+			       struct net *net,
+#endif
 			       int __space, __u32 mss, __u32 *rcv_wnd,
 			       __u32 *window_clamp, int wscale_ok,
-#ifdef CONFIG_LGP_DATA_TCPIP_MPTCP
-			       __u8 *rcv_wscale, __u32 init_rcv_wnd,
-			       const struct sock *sk);
-#else
 			       __u8 *rcv_wscale, __u32 init_rcv_wnd);
-#endif
 
 static inline int tcp_win_from_space(int space)
 {
@@ -2037,10 +2017,10 @@ struct tcp_sock_af_ops {
 struct tcp_sock_ops {
 	u32 (*__select_window)(struct sock *sk);
 	u16 (*select_window)(struct sock *sk);
-	void (*select_initial_window)(int __space, __u32 mss, __u32 *rcv_wnd,
+	void (*select_initial_window)(const struct sock *sk, int __space,
+				      __u32 mss, __u32 *rcv_wnd,
 				      __u32 *window_clamp, int wscale_ok,
-				      __u8 *rcv_wscale, __u32 init_rcv_wnd,
-				      const struct sock *sk);
+				      __u8 *rcv_wscale, __u32 init_rcv_wnd);
 	int (*select_size)(const struct sock *sk, bool sg, bool first_skb);
 	void (*init_buffer_space)(struct sock *sk);
 	void (*set_rto)(struct sock *sk);

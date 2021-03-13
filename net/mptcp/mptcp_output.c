@@ -1623,18 +1623,18 @@ void mptcp_sub_retransmit_timer(struct sock *sk)
 }
 
 /* Modify values to an mptcp-level for the initial window of new subflows */
-void mptcp_select_initial_window(int __space, __u32 mss, __u32 *rcv_wnd,
+void mptcp_select_initial_window(const struct sock *sk, int __space,
+				__u32 mss, __u32 *rcv_wnd,
 				__u32 *window_clamp, int wscale_ok,
-				__u8 *rcv_wscale, __u32 init_rcv_wnd,
-				 const struct sock *sk)
+				__u8 *rcv_wscale, __u32 init_rcv_wnd)
 {
 	const struct mptcp_cb *mpcb = tcp_sk(sk)->mpcb;
 
 	*window_clamp = mpcb->orig_window_clamp;
 	__space = tcp_win_from_space(mpcb->orig_sk_rcvbuf);
 
-	tcp_select_initial_window(__space, mss, rcv_wnd, window_clamp,
-				  wscale_ok, rcv_wscale, init_rcv_wnd, sk);
+	tcp_select_initial_window(sk, __space, mss, rcv_wnd, window_clamp,
+				  wscale_ok, rcv_wscale, init_rcv_wnd);
 }
 
 static inline u64 mptcp_calc_rate(const struct sock *meta_sk, unsigned int mss,
