@@ -2361,7 +2361,7 @@ static int fg_slope_limit_config(struct fg_chip *chip, int batt_temp)
 static int __fg_esr_filter_config(struct fg_chip *chip,
 				enum esr_filter_status esr_flt_sts)
 {
-#ifdef CONFIG_LGE_PM
+#ifdef CONFIG_LGE_PM_DEBUG
 	const char str_esr_flt_sts[3][11] = {"room temp", "low temp", "relex temp"};
 #endif
 	u8 esr_tight_flt, esr_broad_flt;
